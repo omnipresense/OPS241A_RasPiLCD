@@ -23,23 +23,24 @@ name.  This allows one to simply
 git clone https://github.com/omnipresense/OPS241A_RasPiLCD.git
 ```
 
-(and move run_radar.sh up to /home/pi)
+(and ```mv run_radar.sh /home/pi``` and ```chmod 755 /home/pi/run_radar.sh```)
 
 The next trick is to get it to auto-run
 
 A graphical front end must be running, and the default for Raspian these days
-is LXDE .
+is LXDE.   
 
 To have the radar start at system boot time, the file 
 ```
-.config/lxsession/LXDE-pi/autostart
+/home/pi/.config/lxsession/LXDE-pi/autostart
 ```
-must have an entry that is (approximately)
+must have an line that is (approximately)
 ```
 @/home/pi/run_radar.sh
 ```
 
-You probably want to manipulate the LX menus that come up by default to be relevant to a 480x300 display intended to demonstrate the radar.  This means disabling almost everything except a new entry for the radar, which will call the run_radar.sh script
+You probably want to manipulate the LX menus that come up by default to be relevant to a 480x300 display intended to demonstrate the radar.  This means disabling almost everything except a new entry for the radar, which will call the run_radar.sh script.
+The most reliable way to do this is using the window menu system that you see on the screen (or via VNC, see below)
 
 #### Tips
 VNC can be helpful for seeing the pi display on a PC.
@@ -50,6 +51,8 @@ sudo vi /root/.vnc/config.d/vncserver-x11
 Authentication=VncAuth
 sudo vncpasswd -service
 ```
+
+An alternative, perhaps better than the one that comes with the pi, is to use tightvnc ``sudo apt-get install tightvnccserver``` because it is possible to have a remote display not limited to the size of the LCD screen.  
 
 
  
