@@ -135,7 +135,7 @@ while not done:
         pygame.draw.rect(
             screen,
             screen_bkgnd_color, 
-            (speed_col,speed_row,screen_size_width/2,speed_font_size),
+            (speed_col,speed_row,screen_size_width-speed_col,speed_font_size),
             0)
         # Render the text for display. "True" means anti-aliased text.
         speed_rnd = round(Ops241_rx_float, 1)
@@ -147,6 +147,7 @@ while not done:
         else:
             speed_rend = speed_font.render(speed_str, True, WHITE)    
         screen.blit(speed_rend, [speed_col, speed_row])
+        screen.blit(units_lbl, [units_lbl_col, units_lbl_row])
 
         # Update screen
         pygame.display.flip()
@@ -157,4 +158,3 @@ while not done:
             pygame.quit()
             exit()
             
-pi@raspberrypi:~/OPS241A_RasPiLCD $ 
