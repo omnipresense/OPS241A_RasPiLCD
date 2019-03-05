@@ -6,10 +6,14 @@ them on the screen.  (The screen most likely being a small LCD attached
 to a Raspberry Pi.)
 
 The OmniPreSense radar sensor reports velocity data to any computer 
-attached to its on-board USB port.  (It uses USB CDC mode)
+attached to its on-board USB port.  (It uses USB CDC mode, and communicates via the 
+pyserial library.)  Refer to [pyserial documentation](https://pythonhosted.org/pyserial/pyserial.html#installation) 
+for more help. 
 
 The program does a bit of configuration and then data massaging to blit it 
-out to the display.
+out to the display.  It uses pygame to render the readings.  Please ensure 
+pygame is installed on the platform.  Refer to this [Getting Started](https://www.pygame.org/wiki/GettingStarted)
+page if you want to learn more about pygame.
 
 ### Installation and configuration
 
@@ -52,7 +56,7 @@ Authentication=VncAuth
 sudo vncpasswd -service
 ```
 
-An alternative, perhaps better than the one that comes with the pi, is to use tightvnc ``sudo apt-get install tightvnccserver``` because it is possible to have a remote display not limited to the size of the LCD screen.  
+An alternative, perhaps better than the one that comes with the pi, is to use tightvnc ``sudo apt-get install tightvnccserver``` because it is possible to use a remote display window larger than the physical size of the LCD screen.  
 
 
  
