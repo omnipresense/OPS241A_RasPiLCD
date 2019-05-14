@@ -11,23 +11,27 @@ import pygame
 from pygame.locals import *
 
 # Ops241A module settings:  ftps, dir off, 5Ksps, min -9dB pwr, squelch 5000
-Ops241A_Speed_Output_Units = 'UF'
-Ops241A_Direction_Control = 'Od'
+Ops241A_Speed_Output_Units = 'US'
 Ops241A_Sampling_Frequency = 'SV'
 Ops241A_Transmit_Power = 'PD'    # miD power
-Ops241A_Threshold_Control = 'QX' # 1000 magnitude-square.  10 as reported
+Ops241A_Threshold_Control = 'MX' # 1000 magnitude-square.  10 as reported
 Ops241A_Module_Information = '??'
 
 logo_height = 73
 logo_width = 400
 
-# Display screen width and height
-os.environ['SDL_VIDEODRIVER'] = 'fbcon'
-os.environ["SDL_FBDEV"] = "/dev/fb1"
-screen_size = (480, 320)
+use_LCD=False
+if use_LCD:
+    # Display screen width and height
+    os.environ['SDL_VIDEODRIVER'] = 'fbcon'
+    os.environ["SDL_FBDEV"] = "/dev/fb1"
+    screen_size = (480, 320)
+else:
+    print("Not configured for TFT display")
+    #screen_size = (1280, 720)
+    screen_size = (640, 480)
 
 
-units_lbl_font_size = 50
 
 
 # Initialize pygame graphics and sound
@@ -43,13 +47,15 @@ BLUE  = (  0,   0, 255)
 screen = pygame.display.set_mode(screen_size)
 screen_size_width = screen_size[0]
 screen_size_height = screen_size[1]
+units_lbl_font_size = int(screen_size_width/10)
 pygame.display.set_caption("OmniPreSense Radar")
 
 # Initialize the display
-screen_bkgnd_color = (0x30,0x39,0x96)
+screen_bkgnd_color = (0x30,0x39,0x86)
 screen.fill(screen_bkgnd_color)
 logo = pygame.image.load('/home/pi/ops_logo_400x73.jpg')
-screen.blit(logo, (40,1))  # (480-400)/2
+logo_x = (screen_size_width - logo_width)/2
+screen.blit(logo, (logo_x,1))  # (480-400)/2
 
 speed_font_size = 180
 speed_font_name = "Consolas"
@@ -100,11 +106,10 @@ def send_serial_cmd(print_prefix, command) :
 # Initialize and query Ops241A Module
 print("\nInitializing Ops241A Module")
 send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units)
-send_serial_cmd("\nSet Direction Control: ", Ops241A_Direction_Control)
 send_serial_cmd("\nSet Sampling Frequency: ", Ops241A_Sampling_Frequency)
 send_serial_cmd("\nSet Transmit Power: ", Ops241A_Transmit_Power)
 send_serial_cmd("\nSet Threshold Control: ", Ops241A_Threshold_Control)
-send_serial_cmd("\nModule Information: ", Ops241A_Module_Information)
+#send_serial_cmd("\nModule Information: ", Ops241A_Module_Information)
 
 ser=serial.Serial(
     port = '/dev/ttyACM0',
@@ -126,27 +131,33 @@ while not done:
     Ops241_rx_bytes_length = len(Ops241_rx_bytes)
     if (Ops241_rx_bytes_length != 0) :
         Ops241_rx_str = str(Ops241_rx_bytes)
+        print("RX:"+Ops241_rx_str)
         if Ops241_rx_str.find('{') == -1 :
             # Speed data found
-            Ops241_rx_float = float(Ops241_rx_bytes)
-            speed_available = True
+            try:
+                Ops241_rx_float = float(Ops241_rx_bytes)
+                speed_available = True
+            except ValueError:
+                print("Unable to convert to a number the string:"+Ops241_rx_str)
+                speed_available = False
 
     if speed_available == True :
         pygame.draw.rect(
             screen,
             screen_bkgnd_color, 
-            (speed_col,speed_row,screen_size_width/2,speed_font_size),
+            (speed_col,speed_row,screen_size_width-speed_col,speed_font_size),
             0)
         # Render the text for display. "True" means anti-aliased text.
         speed_rnd = round(Ops241_rx_float, 1)
         speed_str = str(speed_rnd)
         if speed_rnd < 0:
-            speed_rend = speed_font.render(speed_str, True, BLUE)    
+            speed_rend = speed_font.render(speed_str, True, WHITE)    
         elif speed_rnd > 0:
             speed_rend = speed_font.render(speed_str, True, RED)    
         else:
             speed_rend = speed_font.render(speed_str, True, WHITE)    
         screen.blit(speed_rend, [speed_col, speed_row])
+        screen.blit(units_lbl, [units_lbl_col, units_lbl_row])
 
         # Update screen
         pygame.display.flip()
@@ -157,4 +168,3 @@ while not done:
             pygame.quit()
             exit()
             
-pi@raspberrypi:~/OPS241A_RasPiLCD $ 
