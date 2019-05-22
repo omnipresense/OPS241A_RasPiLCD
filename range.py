@@ -9,17 +9,16 @@ import serial
 import re
 import pygame
 from pygame.locals import *
-from datetime import datetime, timedelta
 
-# Ops241A module settings:  ftps, dir off, 5Ksps, min -9dB pwr, squelch 5000
-Ops241A_Speed_Output_Units = ['US','UK','UM','UC']
-Ops241A_Speed_Output_Units_lbl = ['mph','km/h','m/s','cm/s']
-OPS_current_units = 3
-Ops241A_Blanks_Pref_Zero = 'BZ'
-Ops241A_Sampling_Frequency = 'SV'
-Ops241A_Transmit_Power = 'PD'    # miD power
-Ops241A_Threshold_Control = 'MX' # 1000 magnitude-square.  10 as reported
-Ops241A_Module_Information = '??'
+# Ops241B module settings:  ftps, dir off, 5Ksps, min -9dB pwr, squelch 5000
+Ops241B_Output_Units_OFF = 'Ou'
+Ops241B_Range_Output_Units = 'uM'
+Ops241B_Wait_Interval = 'WL'
+Ops241B_Transmit_Power = 'PD'    # miD power
+Ops241B_Threshold_Control = 'm>200/r/n'
+Ops241B_Reporting_Preference = 'Ov' # OV is oprder by the value.  /=sm to lg`
+#Ops241B_Reporting_Preference = 'OVO\\' # OV is oprder by the value.  /=sm to lg`
+Ops241B_Module_Information = '??'
 
 logo_height = 73
 logo_width = 400
@@ -68,15 +67,15 @@ speed_col = int(screen_size[0] / 4)  # quarter of the way in
 speed_row = logo_height + int(speed_font_size * 0.3)  # nudge a bit
 
 units_lbl_font = pygame.font.SysFont(speed_font_name, units_lbl_font_size, True, False)
-units_lbl = units_lbl_font.render("m/s", True, WHITE)    
-units_lbl_col = int(3*(screen_size[0] / 4))  # three quarter of the way in
+units_lbl = units_lbl_font.render("meters", True, WHITE)    
+units_lbl_col = int(screen_size[0] *  (0.63))  # most of the way in
 units_lbl_row = (speed_row + speed_font_size) - (2*units_lbl_font_size)
 screen.blit(units_lbl, [units_lbl_col, units_lbl_row])
 
 # Update screen
 pygame.display.flip()
 
-# Initialize the USB port to read from the OPS-241A module
+# Initialize the USB port to read from the OPS-241B module
 ser=serial.Serial(
     port = '/dev/ttyACM0',
     baudrate = 9600,
@@ -89,7 +88,7 @@ ser=serial.Serial(
 ser.flushInput()
 ser.flushOutput()
 
-# sendSerialCommand: function for sending commands to the OPS-241A module
+# sendSerialCommand: function for sending commands to the OPS-241B module
 def send_serial_cmd(print_prefix, command) :
     data_for_send_str = command
     data_for_send_bytes = str.encode(data_for_send_str)
@@ -107,20 +106,18 @@ def send_serial_cmd(print_prefix, command) :
             if data_rx_str.find(ser_message_start) :
                 ser_write_verify = True
             
-# Initialize and query Ops241A Module
-print("\nInitializing Ops241A Module")
-send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units[OPS_current_units])
-units_lbl = units_lbl_font.render(Ops241A_Speed_Output_Units_lbl[OPS_current_units], True, WHITE)    
-send_serial_cmd("\nSet Sampling Frequency: ", Ops241A_Sampling_Frequency)
-send_serial_cmd("\nSet Transmit Power: ", Ops241A_Transmit_Power)
-send_serial_cmd("\nSet Threshold Control: ", Ops241A_Threshold_Control)
-#send_serial_cmd("\nModule Information: ", Ops241A_Module_Information)
-send_serial_cmd("\nSet Blanks Preference: ", Ops241A_Blanks_Pref_Zero) 
+# Initialize and query Ops241B Module
+print("\nInitializing Ops241B Module")
+send_serial_cmd("\nModule Information: ", Ops241B_Module_Information)
+send_serial_cmd("\nSet Wait interval: ", Ops241B_Wait_Interval)
+send_serial_cmd("\nSet Range Output Units to Meters: ", Ops241B_Range_Output_Units)
+send_serial_cmd("\nSet Reporting order pref (by mag or distance): ", Ops241B_Reporting_Preference)
+send_serial_cmd("\nSet Output Units OFF: ", Ops241B_Output_Units_OFF)
+#send_serial_cmd("\nSet Transmit Power: ", Ops241B_Transmit_Power)
+#send_serial_cmd("\nSet Threshold Control: ", Ops241B_Threshold_Control)
 
 
 # Main Loop
-last_units_change = datetime.now()
-interval_timedelta = timedelta(seconds=10)
 done = False
 while not done:
     speed_available = False
@@ -160,16 +157,6 @@ while not done:
         # Update screen
         pygame.display.flip()
         # Limit to 60 frames per second
-
-    now = datetime.now()
-    if (last_units_change + interval_timedelta) < now:
-        if OPS_current_units == len(Ops241A_Speed_Output_Units)-1:
-            OPS_current_units=0
-        else:
-            OPS_current_units+=1
-        send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units[OPS_current_units])
-        units_lbl = units_lbl_font.render(Ops241A_Speed_Output_Units_lbl[OPS_current_units], True, WHITE)    
-        last_units_change = now
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
