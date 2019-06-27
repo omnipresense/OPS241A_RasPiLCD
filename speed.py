@@ -9,9 +9,13 @@ import serial
 import re
 import pygame
 from pygame.locals import *
+from datetime import datetime, timedelta
 
 # Ops241A module settings:  ftps, dir off, 5Ksps, min -9dB pwr, squelch 5000
-Ops241A_Speed_Output_Units = 'US'
+Ops241A_Speed_Output_Units = ['US','UK','UM','UC']
+Ops241A_Speed_Output_Units_lbl = ['mph','km/h','m/s','cm/s']
+OPS_current_units = 3
+Ops241A_Blanks_Pref_Zero = 'BZ'
 Ops241A_Sampling_Frequency = 'SV'
 Ops241A_Transmit_Power = 'PD'    # miD power
 Ops241A_Threshold_Control = 'MX' # 1000 magnitude-square.  10 as reported
@@ -20,7 +24,7 @@ Ops241A_Module_Information = '??'
 logo_height = 73
 logo_width = 400
 
-use_LCD=False
+use_LCD=True
 if use_LCD:
     # Display screen width and height
     os.environ['SDL_VIDEODRIVER'] = 'fbcon'
@@ -54,8 +58,8 @@ pygame.display.set_caption("OmniPreSense Radar")
 screen_bkgnd_color = (0x30,0x39,0x86)
 screen.fill(screen_bkgnd_color)
 logo = pygame.image.load('/home/pi/ops_logo_400x73.jpg')
-logo_x = (screen_size_width - logo_width)/2
 screen.blit(logo, (logo_x,1))  # (480-400)/2
+logo_x = (screen_size_width - logo_width)/2
 
 speed_font_size = 180
 speed_font_name = "Consolas"
@@ -105,24 +109,19 @@ def send_serial_cmd(print_prefix, command) :
             
 # Initialize and query Ops241A Module
 print("\nInitializing Ops241A Module")
-send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units)
+send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units[OPS_current_units])
+units_lbl = units_lbl_font.render(Ops241A_Speed_Output_Units_lbl[OPS_current_units], True, WHITE)    
 send_serial_cmd("\nSet Sampling Frequency: ", Ops241A_Sampling_Frequency)
 send_serial_cmd("\nSet Transmit Power: ", Ops241A_Transmit_Power)
 send_serial_cmd("\nSet Threshold Control: ", Ops241A_Threshold_Control)
 #send_serial_cmd("\nModule Information: ", Ops241A_Module_Information)
-
-ser=serial.Serial(
-    port = '/dev/ttyACM0',
-    baudrate = 9600,
-    parity = serial.PARITY_NONE,
-    stopbits = serial.STOPBITS_ONE,
-    bytesize = serial.EIGHTBITS,
-    timeout = 0.01,
-    writeTimeout = 2
-    )
+send_serial_cmd("\nSet Blanks Preference: ", Ops241A_Blanks_Pref_Zero) 
+#send_serial_cmd("\nModule Information: ", Ops241A_Module_Information)
 
 
 # Main Loop
+last_units_change = datetime.now()
+interval_timedelta = timedelta(seconds=10)
 done = False
 while not done:
     speed_available = False
@@ -162,6 +161,16 @@ while not done:
         # Update screen
         pygame.display.flip()
         # Limit to 60 frames per second
+
+    now = datetime.now()
+    if (last_units_change + interval_timedelta) < now:
+        if OPS_current_units == len(Ops241A_Speed_Output_Units)-1:
+            OPS_current_units=0
+        else:
+            OPS_current_units+=1
+        send_serial_cmd("\nSet Speed Output Units: ", Ops241A_Speed_Output_Units[OPS_current_units])
+        units_lbl = units_lbl_font.render(Ops241A_Speed_Output_Units_lbl[OPS_current_units], True, WHITE)    
+        last_units_change = now
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
