@@ -78,18 +78,6 @@ screen.blit(units_lbl, [units_lbl_col, units_lbl_row])
 # Update screen
 pygame.display.flip()
 
-# Initialize the USB port to read from the OPS-241B module
-ser=serial.Serial(
-    port = '/dev/ttyACM0',
-    baudrate = 9600,
-    parity = serial.PARITY_NONE,
-    stopbits = serial.STOPBITS_ONE,
-    bytesize = serial.EIGHTBITS,
-    timeout = 1,
-    writeTimeout = 2
-)
-ser.flushInput()
-ser.flushOutput()
 
 # sendSerialCommand: function for sending commands to the OPS-241B module
 def send_serial_cmd(print_prefix, command) :
@@ -109,6 +97,18 @@ def send_serial_cmd(print_prefix, command) :
             if data_rx_str.find(ser_message_start) :
                 ser_write_verify = True
             
+# Initialize the USB port to read from the OPS-241B module
+ser=serial.Serial(
+    port = '/dev/ttyACM0',
+    baudrate = 115200,
+    parity = serial.PARITY_NONE,
+    stopbits = serial.STOPBITS_ONE,
+    bytesize = serial.EIGHTBITS,
+    timeout = 1,
+    writeTimeout = 2
+)
+ser.flushInput()
+ser.flushOutput()
 # Initialize and query Ops241B Module
 print("\nInitializing Ops241B Module")
 send_serial_cmd("\nModule Information: ", Ops241B_Module_Information)
@@ -133,7 +133,7 @@ def read_and_render():
         Ops241_rx_bytes_length = len(Ops241_rx_bytes)
         if (Ops241_rx_bytes_length != 0) :
             Ops241_rx_str = Ops241_rx_bytes.decode("utf-8")
-            print("RX:"+Ops241_rx_str)
+            #print("RX:"+Ops241_rx_str)
             if len(Ops241_rx_str) > 3 and Ops241_rx_str.find('{') == -1 :
                 # Speed data found
                 try:
@@ -141,13 +141,11 @@ def read_and_render():
                     Ops241_mag_float = float(maybe_nums[0])
                     Ops241_range_float = float(maybe_nums[1])
                     range_available = True
-                 
+
+                    # color is proportional to the max mag ever seen
                     if Ops241_mag_float > max_discovered_mag:
                         max_discovered_mag = Ops241_mag_float 
-    #                elif max_discovered_mag/4 > Ops241_mag_float:
-    #                    max_discovered_mag = max_discovered_mag/2
-    #                elif max_discovered_mag/2 > Ops241_mag_float:
-    #                    max_discovered_mag -= 1 #  slowly lower the ceiling when idle
+                        # though note that it permanenty changes, until restart
                 except ValueError:
                     print("Unable to convert the strings {} and {}".format(maybe_nums[0],maybe_nums[1]) )
                     range_available = False
