@@ -11,8 +11,8 @@
             cp "/home/pi/radar_restarter.log" "/home/pi/radar_restarter.log.bck"
         fi
 
-        echo wait while echo is turned off
-        /usr/bin/python serial_util.py --timeToLive 2
+        #echo wait while echo is turned off
+        #/usr/bin/python serial_util.py --timeToLive 2
 
         echo "launching radar, with output sent to ~/radar_restarter.log"
         cd /home/pi
